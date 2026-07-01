@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Amazing Playgrounds — English game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pink:#E6007E; --orange:#F7941D; --yellow:#FFC400; --green:#25A957;
+  --blue:#0090D4; --purple:#8A3FBF; --ink:#243046; --muted:#6b7280;
+  --paper:#fffdf7; --panel:#ffffff; --red:#E23B3B; --line:#e6e2d8;
+  --sel:#dbeafe; --selbd:#60a5fa;
+  --bg1:#cfd8e6; --bg2:#e7e0ee;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Nunito',system-ui,sans-serif;color:var(--ink);
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));
+  transition:background .8s ease;
+  min-height:100%;
+}
+.app{max-width:720px;margin:0 auto;padding:10px;}
+h1,h2,h3,.f{font-family:'Fredoka',sans-serif;font-weight:600;}
+button{font-family:'Nunito',sans-serif;cursor:pointer;border:none;}
+button:focus-visible,.cell:focus-visible{outline:3px solid var(--purple);outline-offset:2px;}
+
+/* HUD */
+.hud{
+  position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(6px);border:2px solid #fff;border-radius:16px;
+  box-shadow:0 4px 14px rgba(0,0,0,.12);padding:8px 10px;margin-bottom:10px;
+}
+.hud-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.score{font-family:'Fredoka';font-size:18px;background:var(--yellow);color:#5a3d00;
+  padding:4px 12px;border-radius:999px;box-shadow:0 2px 0 #d9a600;white-space:nowrap;}
+.score.pop{animation:pop .45s ease;}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.28)}100%{transform:scale(1)}}
+.stagechip{font-family:'Fredoka';font-size:13px;background:#eef1f6;color:var(--ink);
+  padding:4px 10px;border-radius:999px;border:1px solid var(--line);}
+.rain-wrap{flex:1;min-width:150px;display:flex;align-items:center;gap:8px;}
+.rain-lbl{font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap;}
+.rainbar{position:relative;flex:1;height:16px;border-radius:999px;background:#e9e6df;overflow:hidden;border:1px solid #ded9cd;}
+.rainfill{position:absolute;inset:0 auto 0 0;width:0%;border-radius:999px;transition:width .5s ease;
+  background:linear-gradient(90deg,var(--pink),var(--orange),var(--yellow),var(--green),var(--blue),var(--purple));}
+
+/* Card */
+.card{background:var(--panel);border:2px solid #fff;border-radius:20px;
+  box-shadow:0 8px 22px rgba(0,0,0,.12);padding:16px;min-height:300px;}
+.qtitle{font-family:'Fredoka';font-size:clamp(18px,4.6vw,24px);margin:2px 0 6px;line-height:1.15;}
+.qsub{color:var(--muted);font-weight:700;font-size:14px;margin-bottom:12px;}
+.emojiq{font-size:64px;text-align:center;margin:6px 0 14px;line-height:1;}
+.eng{color:var(--blue);font-weight:800;}
+
+/* option grid */
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.opt{background:#f6f7fb;border:2px solid #e5e7ef;border-radius:14px;padding:14px 10px;
+  font-size:17px;font-weight:800;color:var(--ink);transition:.12s;text-align:center;}
+.opt:hover{transform:translateY(-2px);border-color:#c9cede;}
+.opt.sel{background:var(--sel);border-color:var(--selbd);}
+.opt.correct{background:#e5f7ec;border-color:var(--green);color:#0f7a3a;}
+.opt.wrong{background:#fde7e7;border-color:var(--red);color:#a11;}
+.opt[disabled]{cursor:default;opacity:.95;}
+.opts.two{grid-template-columns:1fr 1fr;}
+.tf .opt{font-size:20px;padding:20px 10px;}
+
+/* feedback */
+.fb{margin-top:14px;border-radius:14px;padding:12px 14px;font-weight:800;display:none;position:relative;}
+.fb.ok{display:block;background:#e5f7ec;color:#0f7a3a;border:2px solid var(--green);}
+.fb.bad{display:block;background:#fde7e7;color:#9b1c1c;border:2px solid var(--red);}
+.fb .x{position:absolute;top:6px;right:8px;width:26px;height:26px;border-radius:50%;
+  background:#fff;color:var(--red);font-family:'Fredoka';font-size:16px;border:2px solid var(--red);
+  display:flex;align-items:center;justify-content:center;line-height:1;}
+.fb .ans{display:block;margin-top:4px;color:#0f7a3a;}
+
+/* footer nav */
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:14px;}
+.btn{font-family:'Fredoka';font-size:16px;border-radius:14px;padding:11px 18px;
+  background:#eceef3;color:var(--ink);box-shadow:0 3px 0 #cfd3dd;}
+.btn:hover{filter:brightness(.98)}
+.btn:disabled{opacity:.4;cursor:default;box-shadow:none;}
+.btn.primary{background:var(--purple);color:#fff;box-shadow:0 3px 0 #6a2e97;}
+.btn.go{background:var(--green);color:#fff;box-shadow:0 3px 0 #187f40;}
+.btn.check{background:var(--blue);color:#fff;box-shadow:0 3px 0 #006ba3;}
+.btn.small{padding:8px 12px;font-size:14px;}
+
+/* intro / reading */
+.intro{text-align:center;padding:8px 6px;}
+.intro .big{font-size:60px;line-height:1;margin:6px 0;}
+.intro p{color:var(--muted);font-weight:700;font-size:15px;}
+.read{font-size:16.5px;line-height:1.55;font-weight:600;}
+.read p{margin:0 0 10px;}
+.read b{color:var(--pink);}
+.hl{background:#fff4c2;border-radius:5px;padding:0 3px;font-weight:800;color:#7a5a00;}
+.pagehead{font-family:'Fredoka';color:var(--pink);font-size:30px;margin:0 0 8px;}
+
+/* memory */
+.mem{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.mcard{aspect-ratio:3/4;border-radius:12px;background:var(--purple);color:#fff;
+  display:flex;align-items:center;justify-content:center;text-align:center;font-weight:800;
+  font-size:15px;padding:4px;transition:.15s;position:relative;}
+.mcard .back{font-family:'Fredoka';font-size:26px;}
+.mcard.open{background:#fff;color:var(--ink);border:2px solid var(--selbd);}
+.mcard.matched{background:#e5f7ec;color:#0f7a3a;border:2px solid var(--green);}
+.mcard[disabled]{cursor:default;}
+@media(max-width:420px){.mem{grid-template-columns:repeat(3,1fr);}.mcard{font-size:13px;}}
+
+/* chips (sentence) */
+.build{min-height:52px;background:#f6f7fb;border:2px dashed #c9cede;border-radius:14px;
+  padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.chipbank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+.chip{background:#fff;border:2px solid #d7dbe6;border-radius:12px;padding:9px 12px;font-weight:800;font-size:16px;}
+.chip.used{opacity:.35;pointer-events:none;}
+.chip.inbuild{background:var(--sel);border-color:var(--selbd);}
+
+/* anagram */
+.tiles{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px;}
+.tile{width:46px;height:52px;border-radius:12px;background:#fff;border:2px solid #d7dbe6;
+  font-family:'Fredoka';font-size:24px;display:flex;align-items:center;justify-content:center;}
+.tile.used{opacity:.3;pointer-events:none;}
+.answerbox{min-height:56px;background:#f6f7fb;border:2px dashed #c9cede;border-radius:14px;
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;padding:8px;margin-bottom:10px;}
+.aslot{width:40px;height:46px;border-radius:10px;background:var(--sel);border:2px solid var(--selbd);
+  font-family:'Fredoka';font-size:22px;display:flex;align-items:center;justify-content:center;}
+
+/* type */
+.tin{width:100%;font-family:'Nunito';font-weight:800;font-size:20px;padding:14px;border-radius:14px;
+  border:2px solid #d7dbe6;text-align:center;}
+.tin:focus{outline:none;border-color:var(--selbd);background:#f7fbff;}
+
+/* hangman / spider */
+.hmwrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.word{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0;}
+.slot{width:34px;height:44px;border-bottom:4px solid var(--purple);font-family:'Fredoka';font-size:26px;
+  display:flex;align-items:center;justify-content:center;color:var(--ink);}
+.slot.filled{border-bottom-color:var(--green);color:var(--green);}
+.keys{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:340px;margin:4px auto;}
+.key{background:#fff;border:2px solid #d7dbe6;border-radius:9px;font-family:'Fredoka';font-size:15px;padding:8px 0;}
+.key.good{background:#e5f7ec;border-color:var(--green);color:#0f7a3a;}
+.key.bad{background:#fde7e7;border-color:var(--red);color:#a11;}
+.key[disabled]{cursor:default;}
+.spiderstage{width:110px;height:150px;}
+
+/* wordsearch */
+.wsleg{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px;}
+.wschip{background:#fff;border:2px solid #d7dbe6;border-radius:10px;padding:4px 10px;font-weight:800;font-size:14px;}
+.wschip.found{background:#e5f7ec;border-color:var(--green);color:#0f7a3a;text-decoration:line-through;}
+.wsgrid{display:grid;gap:3px;justify-content:center;margin:0 auto;}
+.cell{width:32px;height:32px;border-radius:7px;background:#f2f0e8;border:2px solid #e5e2d7;
+  font-family:'Fredoka';font-size:16px;display:flex;align-items:center;justify-content:center;color:var(--ink);}
+.cell.pick{background:var(--sel);border-color:var(--selbd);}
+.cell.found{background:#d9f5e3;border-color:var(--green);color:#0f7a3a;}
+@media(max-width:400px){.cell{width:28px;height:28px;font-size:14px;}}
+
+/* boss */
+.bosswrap{text-align:center;}
+.hpbar{height:20px;border-radius:999px;background:#eee;border:1px solid #ddd;overflow:hidden;margin:6px auto;max-width:320px;}
+.hpfill{height:100%;background:linear-gradient(90deg,#ff5a5a,#ffb15a);transition:width .35s;}
+.bosssvg{width:150px;height:130px;margin:4px auto;}
+.zap{animation:zap .4s;}
+@keyframes zap{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.center{text-align:center;}
+.stars{font-size:44px;letter-spacing:6px;}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hud">
+    <div class="hud-top">
+      <span class="score" id="score">⭐ 0</span>
+      <span class="stagechip" id="stagechip">Старт</span>
+      <div class="rain-wrap">
+        <span class="rain-lbl" id="rainlbl">Площадка: 0%</span>
+        <div class="rainbar"><div class="rainfill" id="rainfill"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="stage"></div>
+  <div class="nav">
+    <button class="btn small" id="backBtn" onclick="goBack()">← Назад</button>
+    <button class="btn primary" id="nextBtn" onclick="goNext()">Далее →</button>
+  </div>
+</div>
+
+<script>
+/* ================= STATE ================= */
+let score=0, correctUnits=0, TOTAL_UNITS=0, idx=0;
+const screens=[];
+
+/* ============== HELPERS ============== */
+function norm(s){return (s||'').toLowerCase().replace(/[.,!?;:’'"]/g,'').replace(/\s+/g,' ').trim();}
+function stripArt(s){return s.replace(/^(a |an |the )/,'').trim();}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function award(units){
+  score+=units*10; correctUnits+=units;
+  const el=document.getElementById('score');
+  el.textContent='⭐ '+score; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  updateStory();
+}
+function updateStory(){
+  const pct=TOTAL_UNITS?Math.round(correctUnits/TOTAL_UNITS*100):0;
+  document.getElementById('rainfill').style.width=pct+'%';
+  document.getElementById('rainlbl').textContent='Площадка: '+pct+'%';
+  // background: cloudy -> bright rainbow
+  const t=pct/100;
+  const c1=mix([207,216,230],[255,224,178],t);
+  const c2=mix([231,224,238],[186,230,253],t);
+  document.body.style.setProperty('--bg1','rgb('+c1.join(',')+')');
+  document.body.style.setProperty('--bg2','rgb('+c2.join(',')+')');
+}
+function mix(a,b,t){return a.map((v,i)=>Math.round(v+(b[i]-v)*t));}
+
+/* ============== CONTROLLER ============== */
+function render(){
+  const sc=screens[idx];
+  document.getElementById('stagechip').textContent=sc.stage;
+  const host=document.getElementById('stage');
+  host.innerHTML=''; sc.build(host);
+  document.getElementById('backBtn').disabled = idx===0;
+  refreshNext();
+  host.scrollTop=0; window.scrollTo(0,0);
+}
+function refreshNext(){
+  const sc=screens[idx];
+  const canGo = sc.free || sc.done;
+  const btn=document.getElementById('nextBtn');
+  btn.disabled = !canGo || idx>=screens.length-1;
+  btn.textContent = idx>=screens.length-1 ? 'Готово' : 'Далее →';
+}
+function goNext(){ if(idx<screens.length-1){idx++;render();} }
+function goBack(){ if(idx>0){idx--;render();} }
+function autoNext(){ setTimeout(()=>{ if(idx<screens.length-1){idx++;render();} },1350); }
+
+/* shared feedback for single-answer screens */
+function feedbackOK(host){
+  const fb=document.createElement('div'); fb.className='fb ok';
+  fb.textContent='ВЕРНО! +10 ⭐'; host.appendChild(fb);
+}
+function feedbackBad(host, answerText){
+  const fb=document.createElement('div'); fb.className='fb bad';
+  fb.innerHTML='Неверно.<span class="ans">Правильно: '+answerText+'</span>'+
+    '<button class="x" title="Закрыть" onclick="this.parentElement.style.display=\'none\'">✕</button>';
+  host.appendChild(fb);
+}
+
+/* ============== SCREEN BUILDERS ============== */
+
+/* intro */
+function introScreen(stage, emoji, title, text){
+  return {stage, free:true, done:true, build(h){
+    h.innerHTML='<div class="intro"><div class="big">'+emoji+'</div>'+
+      '<h2 class="qtitle">'+title+'</h2><p>'+text+'</p></div>';
+  }};
+}
+
+/* reading */
+function readingScreen(){
+  return {stage:'📖 Чтение', free:true, done:true, build(h){
+    h.innerHTML=
+    '<div class="read">'+
+    '<div class="pagehead">Amazing Playgrounds</div>'+
+    '<p>Do you like to play outside? Many <b>children</b> like to <b>play</b> at <b>playgrounds</b>. Playgrounds can be really <b>fun</b>!</p>'+
+    '<p>This is a very <b>special</b> playground in <b>Japan</b>. The <b>artist</b> who made this playground is from Japan.</p>'+
+    '<p>In this playground, you can <b>jump</b> and play on big, <b>colorful</b> <b>circles</b>. You can <b>run</b>, <b>crawl</b>, <b>climb</b>, and <b>slide</b>! You can <b>bounce</b> and have fun. There are big <b>balls</b> to <b>swing</b> on. It is really <b>cool</b>!</p>'+
+    '<p>There is a big <b>spider</b> in a playground in <b>Denmark</b>. You can <b>climb</b> inside! You can climb on <b>ropes</b> that look like the spider\'s <b>web</b>.</p>'+
+    '<p style="color:#8A3FBF;font-weight:800;margin-top:12px;">Прочитай текст 2 раза. Дальше будут задания по тексту 👇</p>'+
+    '</div>';
+  }};
+}
+
+/* pick-one (choice / true-false / fill) */
+function pickScreen(stage, cfg){
+  // cfg: {promptHTML, emoji, options:[{label,val}], answer, sub}
+  return {stage, done:false, correct:false, build(h){
+    const st=this;
+    const opts = st._opts || (st._opts = shuffle(cfg.options));
+    let html='';
+    if(cfg.sub) html+='<div class="qsub">'+cfg.sub+'</div>';
+    if(cfg.emoji) html+='<div class="emojiq">'+cfg.emoji+'</div>';
+    html+='<div class="qtitle">'+cfg.promptHTML+'</div>';
+    html+='<div class="opts '+(opts.length===2?'two tf':'')+'" id="opts"></div>';
+    h.innerHTML=html;
+    const box=h.querySelector('#opts');
+    opts.forEach(o=>{
+      const b=document.createElement('button'); b.className='opt'; b.textContent=o.label;
+      if(st.done){
+        b.disabled=true;
+        if(o.val===cfg.answer) b.classList.add('correct');
+        else if(o.val===st.picked && !st.correct) b.classList.add('wrong');
+      } else {
+        b.onclick=()=>{
+          st.picked=o.val; st.correct=(o.val===cfg.answer); st.done=true;
+          if(st.correct) award(1);
+          render();
+          const host=document.getElementById('stage');
+          if(st.correct){ feedbackOK(host); autoNext(); }
+          else { feedbackBad(host, correctLabel(opts,cfg.answer)); }
+          refreshNext();
+        };
+      }
+      box.appendChild(b);
+    });
+    if(st.done){
+      const host=h;
+      if(st.correct){const fb=document.createElement('div');fb.className='fb ok';fb.textContent='ВЕРНО! +10 ⭐';host.appendChild(fb);}
+      else feedbackBad(host, correctLabel(opts,cfg.answer));
+    }
+  }};
+}
+function correctLabel(opts,val){const o=opts.find(x=>x.val===val);return '<span class="eng">'+(o?o.label:val)+'</span>';}
+
+/* MEMORY */
+function memoryScreen(pairs){
+  return {stage:'🧩 Слова', done:false, build(h){
+    const st=this;
+    if(!st._deck){
+      let deck=[];
+      pairs.forEach((p,i)=>{deck.push({id:i,txt:p.en,type:'en'});deck.push({id:i,txt:p.ru,type:'ru'});});
+      st._deck=shuffle(deck); st._matched={}; st._open=[]; st._lock=false;
+    }
+    h.innerHTML='<div class="qsub">Найди пары: английское слово ↔ перевод. Открой две карточки.</div><div class="mem" id="mem"></div>';
+    const grid=h.querySelector('#mem');
+    st._deck.forEach((c,pos)=>{
+      const el=document.createElement('button'); el.className='mcard';
+      const isOpen=st._open.includes(pos), isM=st._matched[c.id];
+      if(isM){el.className='mcard matched';el.textContent=c.txt;el.disabled=true;}
+      else if(isOpen){el.className='mcard open';el.textContent=c.txt;el.disabled=true;}
+      else {el.innerHTML='<span class="back">?</span>';}
+      el.onclick=()=>{
+        if(st._lock||isOpen||isM)return;
+        st._open.push(pos); repaint();
+        if(st._open.length===2){
+          st._lock=true;
+          const [a,b]=st._open, ca=st._deck[a], cb=st._deck[b];
+          if(ca.id===cb.id && ca.type!==cb.type){
+            st._matched[ca.id]=true; award(1);
+            setTimeout(()=>{st._open=[];st._lock=false;
+              if(Object.keys(st._matched).length===pairs.length){st.done=true;}
+              render();
+              if(st.done){const fb=document.createElement('div');fb.className='fb ok';fb.textContent='Все пары найдены! Отлично! 🎉';document.getElementById('stage').appendChild(fb);refreshNext();}
+            },420);
+          } else {
+            setTimeout(()=>{st._open=[];st._lock=false;render();},780);
+          }
+        }
+      };
+      grid.appendChild(el);
+    });
+    function repaint(){render();}
+  }};
+}
+
+/* SENTENCE BUILDER */
+function sentenceScreen(words, accepted){
+  return {stage:'🧱 Предложения', done:false, build(h){
+    const st=this;
+    st.attempts=st.attempts||0;
+    st.picked=st.picked||[]; // indices
+    h.innerHTML='<div class="qsub">Собери предложение. Нажимай на слова по порядку.</div>'+
+      '<div class="build" id="bld"></div><div class="chipbank" id="bank"></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+      '<button class="btn small" id="reset">↺ Сбросить</button>'+
+      '<button class="btn check small" id="check">Проверить</button></div>';
+    const bank=h.querySelector('#bank'), bld=h.querySelector('#bld');
+    words.forEach((w,i)=>{
+      const c=document.createElement('button'); c.className='chip'; c.textContent=w;
+      if(st.picked.includes(i)) c.classList.add('used');
+      c.onclick=()=>{ if(st.done||st.picked.includes(i))return; st.picked.push(i); render(); };
+      bank.appendChild(c);
+    });
+    st.picked.forEach(i=>{
+      const c=document.createElement('button'); c.className='chip inbuild'; c.textContent=words[i];
+      c.onclick=()=>{ if(st.done)return; st.picked=st.picked.filter(x=>x!==i); render(); };
+      bld.appendChild(c);
+    });
+    h.querySelector('#reset').onclick=()=>{ if(st.done)return; st.picked=[]; render(); };
+    h.querySelector('#check').onclick=()=>{
+      if(st.done)return;
+      const built=norm(st.picked.map(i=>words[i]).join(' '));
+      const ok=accepted.some(a=>norm(a)===built);
+      if(ok){ st.done=true; st.correct=true; award(1); render();
+        feedbackOK(document.getElementById('stage')); autoNext(); refreshNext(); }
+      else{
+        st.attempts++;
+        if(st.attempts>=2){ st.done=true; st.correct=false; render();
+          feedbackBad(document.getElementById('stage'), '<span class="eng">'+accepted[0]+'</span>'); refreshNext(); }
+        else{ const fb=document.createElement('div');fb.className='fb bad';
+          fb.innerHTML='Пока не так. Попробуй ещё раз! (осталась 1 попытка)<button class="x" onclick="this.parentElement.style.display=\'none\'">✕</button>';
+          h.appendChild(fb); }
+      }
+    };
+    if(st.done){
+      if(st.correct){const fb=document.createElement('div');fb.className='fb ok';fb.textContent='ВЕРНО! +10 ⭐';h.appendChild(fb);}
+      else feedbackBad(h,'<span class="eng">'+accepted[0]+'</span>');
+    }
+  }};
+}
+
+/* ANAGRAM (click letters) */
+function anagramScreen(word, hint){
+  return {stage:'🔤 Анаграмма', done:false, build(h){
+    const st=this;
+    st.attempts=st.attempts||0; st.picked=st.picked||[];
+    if(!st._letters){ let ls=word.toUpperCase().split(''); let sh; do{sh=shuffle(ls);}while(sh.join('')===word.toUpperCase()&&word.length>1); st._letters=sh; }
+    h.innerHTML='<div class="qsub">Собери слово из букв. Подсказка: <b>'+hint+'</b></div>'+
+      '<div class="answerbox" id="ans"></div><div class="tiles" id="tiles"></div>'+
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">'+
+      '<button class="btn small" id="reset">↺ Сбросить</button>'+
+      '<button class="btn check small" id="check">Проверить</button></div>';
+    const ans=h.querySelector('#ans'), tiles=h.querySelector('#tiles');
+    st.picked.forEach(i=>{const s=document.createElement('div');s.className='aslot';s.textContent=st._letters[i];ans.appendChild(s);});
+    st._letters.forEach((L,i)=>{
+      const t=document.createElement('button'); t.className='tile'; t.textContent=L;
+      if(st.picked.includes(i)) t.classList.add('used');
+      t.onclick=()=>{ if(st.done||st.picked.includes(i))return; st.picked.push(i); render(); };
+      tiles.appendChild(t);
+    });
+    h.querySelector('#reset').onclick=()=>{ if(st.done)return; st.picked=[]; render(); };
+    h.querySelector('#check').onclick=()=>{
+      if(st.done)return;
+      const built=st.picked.map(i=>st._letters[i]).join('').toLowerCase();
+      if(built===word.toLowerCase()){ st.done=true;st.correct=true;award(1);render();
+        feedbackOK(document.getElementById('stage'));autoNext();refreshNext(); }
+      else{ st.attempts++;
+        if(st.attempts>=2){ st.done=true;st.correct=false;render();
+          feedbackBad(document.getElementById('stage'),'<span class="eng">'+word+'</span>');refreshNext(); }
+        else{ const fb=document.createElement('div');fb.className='fb bad';
+          fb.innerHTML='Не совсем. Ещё попытка!<button class="x" onclick="this.parentElement.style.display=\'none\'">✕</button>';h.appendChild(fb);
+          st.picked=[]; }
+      }
+    };
+    if(st.done){ if(st.correct){const fb=document.createElement('div');fb.className='fb ok';fb.textContent='ВЕРНО! +10 ⭐';h.appendChild(fb);}
+      else feedbackBad(h,'<span class="eng">'+word+'</span>'); }
+  }};
+}
+
+/* TYPE INPUT */
+function typeScreen(promptHTML, accepted){
+  return {stage:'⌨️ Напиши слово', done:false, build(h){
+    const st=this; st.attempts=st.attempts||0;
+    h.innerHTML='<div class="qsub">Напиши слово по-английски и нажми «Проверить» (или Enter).</div>'+
+      '<div class="qtitle center">'+promptHTML+'</div>'+
+      '<input class="tin" id="tin" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type here...">'+
+      '<div style="text-align:center;margin-top:10px;"><button class="btn check" id="check">Проверить</button></div>';
+    const inp=h.querySelector('#tin');
+    if(st.done){ inp.value=st.picked||''; inp.disabled=true; h.querySelector('#check').disabled=true;
+      if(st.correct){const fb=document.createElement('div');fb.className='fb ok';fb.textContent='ВЕРНО! +10 ⭐';h.appendChild(fb);}
+      else feedbackBad(h,'<span class="eng">'+accepted[0]+'</span>');
+      return;
+    }
+    setTimeout(()=>inp.focus(),50);
+    function check(){
+      const raw=inp.value; st.picked=raw;
+      const n=norm(raw), na=stripArt(n);
+      const ok=accepted.some(a=>{const an=norm(a);return n===an||na===stripArt(an);});
+      if(ok){ st.done=true;st.correct=true;award(1);render();
+        feedbackOK(document.getElementById('stage'));autoNext();refreshNext(); }
+      else{ st.attempts++;
+        if(st.attempts>=2){ st.done=true;st.correct=false;render();
+          feedbackBad(document.getElementById('stage'),'<span class="eng">'+accepted[0]+'</span>');refreshNext(); }
+        else{ const fb=document.createElement('div');fb.className='fb bad';
+          fb.innerHTML='Проверь ещё раз! (осталась 1 попытка)<button class="x" onclick="this.parentElement.style.display=\'none\'">✕</button>';h.appendChild(fb); inp.focus(); }
+      }
+    }
+    h.querySelector('#check').onclick=check;
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+  }};
+}
+
+/* HANGMAN (spider descends web) */
+function hangmanScreen(list){
+  const ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  return {stage:'🕷️ Виселица', done:false, build(h){
+    const st=this;
+    if(st._wi===undefined){st._wi=0;st._used={};st._wrong=0;st._solved=false;}
+    const cur=list[st._wi];
+    const word=cur.w.toUpperCase();
+    h.innerHTML='<div class="qsub">Угадывай буквы. Подсказка: <b>'+cur.hint+'</b>. Слово '+(st._wi+1)+' из '+list.length+'.</div>'+
+      '<div class="hmwrap"><div class="spiderstage" id="sp"></div><div class="word" id="w"></div>'+
+      '<div class="keys" id="keys"></div></div>';
+    drawSpider(h.querySelector('#sp'), st._wrong, 6);
+    const wrow=h.querySelector('#w');
+    let allShown=true;
+    word.split('').forEach(ch=>{
+      const s=document.createElement('div'); s.className='slot';
+      if(st._used[ch]||st._solved){s.textContent=ch;s.classList.add('filled');}
+      else {s.textContent='';allShown=false;}
+      wrow.appendChild(s);
+    });
+    const keys=h.querySelector('#keys');
+    ALPHA.forEach(L=>{
+      const b=document.createElement('button'); b.className='key'; b.textContent=L;
+      if(st._used[L]){b.disabled=true; b.classList.add(word.includes(L)?'good':'bad');}
+      if(st._solved||st._wrong>=6) b.disabled=true;
+      b.onclick=()=>guess(L);
+      keys.appendChild(b);
+    });
+    if(allShown && !st._used.__done){ st._used.__done=true; }
+
+    function nextWord(msgOk){
+      const done=(st._wi>=list.length-1);
+      if(done){ st.done=true; render();
+        const fb=document.createElement('div');fb.className='fb ok';fb.textContent='Раунд пройден! 🕸️';document.getElementById('stage').appendChild(fb);refreshNext();
+      } else {
+        st._wi++; st._used={}; st._wrong=0; st._solved=false; render();
+      }
+    }
+    function guess(L){
+      if(st._solved||st._wrong>=6||st._used[L])return;
+      st._used[L]=true;
+      if(word.includes(L)){
+        const won=word.split('').every(c=>st._used[c]);
+        if(won){ st._solved=true; award(1); render();
+          const fb=document.createElement('div');fb.className='fb ok';fb.textContent='Слово: '+word+' — верно! +10 ⭐';document.getElementById('stage').appendChild(fb);
+          setTimeout(()=>nextWord(),1200);
+        } else render();
+      } else {
+        st._wrong++;
+        if(st._wrong>=6){ st._solved=true; render();
+          feedbackBad(document.getElementById('stage'),'<span class="eng">'+word+'</span>');
+          setTimeout(()=>nextWord(),1500);
+        } else render();
+      }
+    }
+  }};
+}
+function drawSpider(host, wrong, max){
+  const y=30+wrong*(78/max); // descends
+  host.innerHTML=
+  '<svg viewBox="0 0 110 150" width="110" height="150" aria-label="spider">'+
+    '<line x1="55" y1="0" x2="55" y2="'+y+'" stroke="#9aa0ad" stroke-width="2"/>'+
+    '<g transform="translate(55,'+(y+14)+')">'+
+      '<ellipse cx="0" cy="0" rx="15" ry="12" fill="#3a3a4a"/>'+
+      '<circle cx="0" cy="-14" r="9" fill="#3a3a4a"/>'+
+      '<circle cx="-3" cy="-15" r="2.2" fill="#fff"/><circle cx="3" cy="-15" r="2.2" fill="#fff"/>'+
+      '<circle cx="-3" cy="-15" r="1" fill="#111"/><circle cx="3" cy="-15" r="1" fill="#111"/>'+
+      '<path d="M-14 -4 Q-26 -10 -30 -2" stroke="#3a3a4a" stroke-width="3" fill="none"/>'+
+      '<path d="M-15 2 Q-28 2 -30 10" stroke="#3a3a4a" stroke-width="3" fill="none"/>'+
+      '<path d="M14 -4 Q26 -10 30 -2" stroke="#3a3a4a" stroke-width="3" fill="none"/>'+
+      '<path d="M15 2 Q28 2 30 10" stroke="#3a3a4a" stroke-width="3" fill="none"/>'+
+    '</g>'+
+    '<text x="55" y="146" text-anchor="middle" font-size="11" fill="#9aa0ad" font-family="Nunito">не дай пауку упасть!</text>'+
+  '</svg>';
+}
+
+/* WORDSEARCH (horizontal words, click two cells) */
+function wordsearchScreen(words){
+  return {stage:'🔍 Найди слова', done:false, build(h){
+    const st=this;
+    const COLS=9, ROWS=Math.max(6,words.length+1);
+    if(!st._grid){
+      const grid=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+      const rows=shuffle([...Array(ROWS).keys()]).slice(0,words.length);
+      st._placed={};
+      words.forEach((w,i)=>{
+        const r=rows[i], W=w.toUpperCase();
+        const off=Math.floor(Math.random()*(COLS-W.length+1));
+        for(let k=0;k<W.length;k++) grid[r][off+k]=W[k];
+        st._placed[W]={r,c0:off,c1:off+W.length-1};
+      });
+      const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(!grid[r][c])grid[r][c]=A[Math.random()*26|0];
+      st._grid=grid; st._found={}; st._pick=null; st._ROWS=ROWS; st._COLS=COLS;
+    }
+    h.innerHTML='<div class="qsub">Найди слова. Нажми на первую букву слова, потом на последнюю.</div>'+
+      '<div class="wsleg" id="leg"></div><div class="wsgrid" id="g" style="grid-template-columns:repeat('+st._COLS+',1fr);"></div>';
+    const leg=h.querySelector('#leg');
+    words.forEach(w=>{const c=document.createElement('span');c.className='wschip'+(st._found[w.toUpperCase()]?' found':'');c.textContent=w.toUpperCase();leg.appendChild(c);});
+    const g=h.querySelector('#g');
+    for(let r=0;r<st._ROWS;r++)for(let c=0;c<st._COLS;c++){
+      const cell=document.createElement('button'); cell.className='cell'; cell.textContent=st._grid[r][c];
+      cell.dataset.r=r; cell.dataset.c=c;
+      // mark found cells
+      for(const w in st._placed){const p=st._placed[w]; if(st._found[w] && r===p.r && c>=p.c0 && c<=p.c1) cell.classList.add('found');}
+      if(st._pick && st._pick.r===r && st._pick.c===c) cell.classList.add('pick');
+      cell.onclick=()=>onPick(r,c);
+      g.appendChild(cell);
+    }
+    if(st.done){const fb=document.createElement('div');fb.className='fb ok';fb.textContent='Все слова найдены! 🎉';h.appendChild(fb);}
+
+    function onPick(r,c){
+      if(st.done)return;
+      if(!st._pick){ st._pick={r,c}; render(); return; }
+      const a=st._pick, b={r,c};
+      st._pick=null;
+      if(a.r!==b.r){ render(); return; } // only horizontal
+      const c0=Math.min(a.c,b.c), c1=Math.max(a.c,b.c);
+      let strf=''; for(let k=c0;k<=c1;k++) strf+=st._grid[a.r][k];
+      const strr=strf.split('').reverse().join('');
+      let hit=null;
+      for(const w in st._placed){ if(st._found[w])continue; if(w===strf||w===strr){hit=w;break;} }
+      if(hit){ st._found[hit]=true; award(1);
+        if(Object.keys(st._found).length===words.length) st.done=true;
+        render();
+        if(st.done) refreshNext();
+      } else { render(); }
+    }
+  }};
+}
+
+/* BOSS */
+function bossScreen(pool, hpMax){
+  return {stage:'🌩️ Босс', done:false, build(h){
+    const st=this;
+    if(st._hp===undefined){st._hp=hpMax; st._qi=0;}
+    h.innerHTML='<div class="bosswrap"><div class="qsub">Тучу нужно победить, чтобы вышло солнце! Верный ответ — удар по туче. Ошибка — туча лечится.</div>'+
+      '<div class="bosssvg" id="boss"></div>'+
+      '<div class="hpbar"><div class="hpfill" id="hp"></div></div>'+
+      '<div class="f" style="font-size:14px;color:var(--muted)">HP тучи: '+st._hp+' / '+hpMax+'</div>'+
+      '<div id="q"></div></div>';
+    drawBoss(h.querySelector('#boss'), st._hp, hpMax);
+    h.querySelector('#hp').style.width=(st._hp/hpMax*100)+'%';
+    if(st.done){ h.querySelector('#q').innerHTML='<div class="fb ok" style="display:block">Ура! Туча побеждена, светит солнце! ☀️🌈</div>'; refreshNext(); return; }
+    const q=pool[st._qi%pool.length];
+    const opts=q._opts||(q._opts=shuffle(q.options.map((o,i)=>({label:o,correct:i===0}))));
+    let html='<div class="qtitle center" style="font-size:20px;margin-top:6px;">'+q.q+'</div><div class="opts" id="opts"></div>';
+    h.querySelector('#q').innerHTML=html;
+    const box=h.querySelector('#opts');
+    opts.forEach(o=>{
+      const b=document.createElement('button'); b.className='opt'; b.textContent=o.label;
+      b.onclick=()=>{
+        if(o.correct){ st._hp=Math.max(0,st._hp-1); award(1);
+          const bs=document.getElementById('boss'); if(bs)bs.classList.add('zap');
+          if(st._hp===0) st.done=true; st._qi++; q._opts=null;
+          setTimeout(()=>render(),380);
+        } else {
+          st._hp=Math.min(hpMax,st._hp+1); q._opts=null;
+          const correctLabel=q.options[0];
+          render();
+          feedbackBad(document.getElementById('stage'),'<span class="eng">'+correctLabel+'</span>');
+          const fb=document.querySelector('.fb.bad'); if(fb){const nx=document.createElement('button');nx.className='btn go small';nx.style.marginLeft='8px';nx.textContent='Дальше →';nx.onclick=()=>{st._qi++;render();};fb.appendChild(nx);}
+        }
+      };
+      box.appendChild(b);
+    });
+  }};
+}
+function drawBoss(host,hp,max){
+  const t=1-hp/max; // 0 stormy -> 1 sunny
+  const dark = mix([90,96,110],[255,214,120],t);
+  const sun = t>0.5?1:0;
+  host.innerHTML=
+  '<svg viewBox="0 0 150 130" width="150" height="130" aria-label="storm">'+
+    (sun?'<circle cx="75" cy="55" r="26" fill="#FFD35A"/>'+
+      '<g stroke="#FFD35A" stroke-width="4">'+
+      '<line x1="75" y1="10" x2="75" y2="22"/><line x1="75" y1="88" x2="75" y2="100"/>'+
+      '<line x1="30" y1="55" x2="42" y2="55"/><line x1="108" y1="55" x2="120" y2="55"/></g>':'')+
+    '<g>'+
+      '<ellipse cx="60" cy="60" rx="34" ry="24" fill="rgb('+dark.join(',')+')"/>'+
+      '<ellipse cx="95" cy="58" rx="28" ry="20" fill="rgb('+dark.join(',')+')"/>'+
+      '<circle cx="62" cy="55" r="4" fill="#2a2a3a"/><circle cx="88" cy="54" r="4" fill="#2a2a3a"/>'+
+      (t<0.6?'<path d="M62 70 Q75 62 90 70" stroke="#2a2a3a" stroke-width="3" fill="none"/>':'<path d="M62 70 Q75 80 90 70" stroke="#2a2a3a" stroke-width="3" fill="none"/>')+
+      (t<0.5?'<path d="M70 82 L64 98 L72 96 L66 112" stroke="#FFD35A" stroke-width="3" fill="none"/><line x1="50" y1="86" x2="46" y2="98" stroke="#8fb7ff" stroke-width="3"/><line x1="100" y1="86" x2="96" y2="98" stroke="#8fb7ff" stroke-width="3"/>':'')+
+    '</g>'+
+  '</svg>';
+}
+
+/* ============== BUILD THE GAME ============== */
+// --- Stage 1: pre-reading words ---
+screens.push(introScreen('🎈 Старт','🌈','Amazing Playgrounds',
+  'Сегодня читаем про удивительную площадку! Сначала — новые слова, потом текст, потом задания и в конце БОСС. Поехали!'));
+
+screens.push(memoryScreen([
+  {en:'play',ru:'играть'},{en:'jump',ru:'прыгать'},{en:'run',ru:'бегать'},
+  {en:'climb',ru:'лезть'},{en:'crawl',ru:'ползти'},{en:'slide',ru:'съезжать'}
+]));
+
+const choice=[
+  {emoji:'🕷️',ans:'spider',o:['spider','ball','web','rope','artist','circle']},
+  {emoji:'🕸️',ans:'web',o:['web','spider','rope','ball','slide','circle']},
+  {emoji:'🏃',ans:'run',o:['run','jump','climb','slide','crawl','swing']},
+  {emoji:'🧗',ans:'climb',o:['climb','run','jump','slide','bounce','swing']},
+  {emoji:'🌧️',ans:'rainy',o:['rainy','big','cool','colorful','special','fun']},
+  {emoji:'🌈',ans:'colorful',o:['colorful','big','rainy','cool','special','fun']},
+  {emoji:'⚽🏀',ans:'balls',o:['balls','circles','ropes','spider','web','slide']},
+  {emoji:'🎨',ans:'artist',o:['artist','spider','child','ball','playground','circle']},
+  {emoji:'🧒👦👧',ans:'children',o:['children','artist','spider','ball','rope','web']},
+  {emoji:'🛝',ans:'playground',o:['playground','spider','web','artist','ball','rope']},
+];
+screens.push(introScreen('🖼️ Слова','🖼️','Смотри и выбирай','Посмотри на картинку и выбери правильное английское слово.'));
+choice.forEach(c=>screens.push(pickScreen('🖼️ Слова',{
+  emoji:c.emoji, promptHTML:'Что это? Выбери слово.',
+  options:c.o.map(x=>({label:x,val:x})), answer:c.ans
+})));
+
+// --- Stage 2: reading ---
+screens.push(introScreen('📖 Чтение','📖','Читаем текст','Прочитай текст про удивительную площадку. Не спеши — дальше вопросы по нему.'));
+screens.push(readingScreen());
+
+// --- Stage 3: True / False ---
+const tf=[
+  {q:'The playground is in Japan.',a:true},
+  {q:'The artist is from Denmark.',a:false},
+  {q:'You can run and jump at the playground.',a:true},
+  {q:'You can swing on big balls.',a:true},
+  {q:'The playground is not colorful.',a:false},
+  {q:'You can climb and crawl at the playground.',a:true},
+  {q:'The spider playground is in Japan.',a:false},
+  {q:'Playgrounds can be fun.',a:true},
+  {q:'You can play inside when it is rainy.',a:true},
+  {q:'There are small balls to swing on.',a:false},
+];
+screens.push(introScreen('✅ Правда/Ложь','✅','Правда или ложь?','Читай предложение по тексту и выбирай: правда или ложь.'));
+tf.forEach(t=>screens.push(pickScreen('✅ Правда/Ложь',{
+  promptHTML:'<span style="color:var(--blue)">'+t.q+'</span>',
+  options:[{label:'✅ Правда',val:'T'},{label:'❌ Ложь',val:'F'}],
+  answer:t.a?'T':'F'
+})));
+
+// --- Stage 4: Fill (word bank) ---
+const fill=[
+  {q:'You can play inside when it\'s ___.',a:'rainy',o:['rainy','colorful','big','cool','special','fun']},
+  {q:'Children like to jump and ___.',a:'bounce',o:['bounce','climb','run','artist','spider','web']},
+  {q:'It\'s fun to swing on ___.',a:'balls',o:['balls','ropes','circles','spider','web','artist']},
+  {q:'The playground is in ___.',a:'Japan',o:['Japan','Denmark','playground','spider','artist','ball']},
+  {q:'You can ___ up high.',a:'climb',o:['climb','run','jump','slide','crawl','swing']},
+  {q:'There is a big ___ in Denmark.',a:'spider',o:['spider','ball','web','rope','circle','artist']},
+  {q:'The circles are big and ___.',a:'colorful',o:['colorful','rainy','big','cool','special','fun']},
+  {q:'The ___ made this playground.',a:'artist',o:['artist','spider','child','playground','ball','circle']},
+];
+screens.push(introScreen('✍️ Вставь слово','✍️','Вставь слово','Выбери слово, которое подходит в предложение.'));
+fill.forEach(f=>screens.push(pickScreen('✍️ Вставь слово',{
+  sub:'Выбери пропущенное слово:',
+  promptHTML:'<span style="color:var(--blue)">'+f.q+'</span>',
+  options:f.o.map(x=>({label:x,val:x})), answer:f.a
+})));
+
+// --- Stage 5: sentence builder ---
+screens.push(introScreen('🧱 Предложения','🧱','Собери предложение','Нажимай на слова по порядку, чтобы собрать предложение.'));
+const sents=[
+  {w:['You','can','run','and','jump'],a:['You can run and jump','You can jump and run']},
+  {w:['The','playground','is','in','Japan'],a:['The playground is in Japan']},
+  {w:['Children','like','to','play'],a:['Children like to play']},
+  {w:['You','can','climb','and','crawl'],a:['You can climb and crawl','You can crawl and climb']},
+  {w:['There','are','big','balls'],a:['There are big balls']},
+  {w:['Playgrounds','can','be','fun'],a:['Playgrounds can be fun']},
+  {w:['You','can','slide','and','bounce'],a:['You can slide and bounce','You can bounce and slide']},
+];
+sents.forEach(s=>screens.push(sentenceScreen(s.w,s.a)));
+
+// --- Stage 6: anagram ---
+screens.push(introScreen('🔤 Анаграмма','🔤','Собери слово','Буквы перепутались! Собери слово по подсказке.'));
+[['jump','прыгать'],['climb','лезть'],['balls','мячи'],['spider','паук'],
+ ['slide','съезжать'],['swing','качаться'],['colorful','разноцветный']]
+ .forEach(a=>screens.push(anagramScreen(a[0],a[1])));
+
+// --- Stage 7: hangman ---
+screens.push(introScreen('🕷️ Виселица','🕸️','Угадай слово','Угадывай буквы. Каждая ошибка опускает паука по паутинке!'));
+screens.push(hangmanScreen([
+  {w:'spider',hint:'паук'},{w:'climb',hint:'лезть'},
+  {w:'bounce',hint:'подпрыгивать'},{w:'rainy',hint:'дождливый'}
+]));
+
+// --- Stage 8: type ---
+screens.push(introScreen('⌨️ Печать','⌨️','Напиши слово','Напиши слово по-английски. Регистр и точки не важны.'));
+[['паук',['spider']],['прыгать',['jump']],['разноцветный',['colorful','colourful']],
+ ['детская площадка',['playground']],['дождливый',['rainy']],['художник',['artist']],
+ ['лезть, карабкаться',['climb']],['качаться',['swing']]]
+ .forEach(t=>screens.push(typeScreen('<b>'+t[0]+'</b>',t[1])));
+
+// --- Stage 9: wordsearch ---
+screens.push(introScreen('🔍 Поиск слов','🔍','Найди слова','Слова спрятаны по строкам. Нажми первую и последнюю букву слова.'));
+screens.push(wordsearchScreen(['PLAY','JUMP','RUN','BALL','WEB','CLIMB']));
+
+// --- Stage 10: BOSS ---
+screens.push(introScreen('🌩️ Босс','🌩️','Финальный босс','Грозовая туча хочет дождь и не даёт играть! Побеждай её правильными ответами, пока не выйдет солнце ☀️'));
+screens.push(bossScreen([
+  {q:'паук',options:['spider','ball','web','artist']},
+  {q:'прыгать',options:['jump','run','climb','slide']},
+  {q:'Where is the playground?',options:['Japan','Denmark','India','China']},
+  {q:'The spider playground is in...',options:['Denmark','Japan','France','Spain']},
+  {q:'разноцветный',options:['colorful','rainy','big','cool']},
+  {q:'дождливый',options:['rainy','special','fun','cool']},
+  {q:'мячи',options:['balls','ropes','circles','webs']},
+  {q:'лезть',options:['climb','crawl','run','swing']},
+  {q:'художник',options:['artist','child','spider','ball']},
+  {q:'ползти',options:['crawl','climb','jump','slide']},
+  {q:'качаться',options:['swing','slide','bounce','run']},
+  {q:'детская площадка',options:['playground','circle','rope','web']},
+  {q:'бегать',options:['run','walk','sit','jump']},
+  {q:'паутина',options:['web','rope','ball','circle']},
+],12));
+
+// --- Finale ---
+screens.push({stage:'🏆 Итог', free:true, done:true, build(h){
+  const max=TOTAL_UNITS*10;
+  const pct=max?score/max:0;
+  let stars = pct>=0.9?3 : pct>=0.7?2 : pct>=0.5?1 : 0;
+  const starStr = '⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  let msg = stars===3?'Превосходно! Ты знаешь площадку наизусть! 🌈':
+            stars===2?'Отлично! Очень хороший результат! 👏':
+            stars===1?'Хорошо! Ещё немного практики — и будет супер! 💪':
+            'Молодец, что дошёл(-ла) до конца! Давай попробуем ещё раз 🙂';
+  h.innerHTML='<div class="center"><div class="intro"><div class="big">🏆</div>'+
+    '<h2 class="qtitle">Игра пройдена!</h2>'+
+    '<div class="stars">'+starStr+'</div>'+
+    '<p style="font-size:18px;color:var(--ink);font-weight:800;margin:8px 0;">Очки: '+score+' / '+max+'</p>'+
+    '<p>'+msg+'</p>'+
+    '<button class="btn go" style="margin-top:8px;" onclick="restart()">↺ Играть снова</button></div></div>';
+}});
+
+function restart(){ location.reload(); }
+
+// count scored units
+TOTAL_UNITS = 0;
+TOTAL_UNITS += 6;            // memory pairs
+TOTAL_UNITS += choice.length;   // 10
+TOTAL_UNITS += tf.length;       // 10
+TOTAL_UNITS += fill.length;     // 8
+TOTAL_UNITS += sents.length;    // 7
+TOTAL_UNITS += 7;               // anagram
+TOTAL_UNITS += 4;               // hangman
+TOTAL_UNITS += 8;               // type
+TOTAL_UNITS += 6;               // wordsearch
+TOTAL_UNITS += 12;              // boss
+
+render();
+</script>
+</body>
+</html>
